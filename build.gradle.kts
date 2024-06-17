@@ -52,7 +52,7 @@ repositories {
 extra.apply {
 
     set("clickHouseDriverVersion", "0.6.1")
-    set("kafkaVersion", "2.7.0")
+    set("kafkaVersion", "3.6.0")
     set("avroVersion", "1.9.2")
 
     // Testing dependencies

@@ -18,6 +18,7 @@ import com.clickhouse.kafka.connect.sink.dlq.ErrorReporter;
 
 import com.clickhouse.kafka.connect.util.QueryIdentifier;
 import com.clickhouse.kafka.connect.util.Utils;
+import com.github.wnameless.json.flattener.JsonFlattener;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
@@ -743,6 +744,12 @@ public class ClickHouseWriter implements DBWriter {
                         long beforeSerialize = System.currentTimeMillis();
                         String gsonString = gson.toJson(data, gsonType);
                         dataSerializeTime += System.currentTimeMillis() - beforeSerialize;
+
+                        if (csc.isFlattenRecords()) {
+                            LOGGER.debug("Flattening data");
+                            gsonString = JsonFlattener.flatten(gsonString);
+                        }
+
                         LOGGER.trace("topic {} partition {} offset {} payload {}",
                                 record.getTopic(),
                                 record.getRecordOffsetContainer().getPartition(),
@@ -758,7 +765,7 @@ public class ClickHouseWriter implements DBWriter {
                 s2 = System.currentTimeMillis();
                 try (ClickHouseResponse response = future.get()) {
                     ClickHouseResponseSummary summary = response.getSummary();
-                    LOGGER.debug("Response Summary - Written Bytes: [{}], Written Rows: [{}] - (QueryId: [{}])", summary.getWrittenBytes(), summary.getWrittenRows(), queryId.getQueryId());
+                    LOGGER.info("Response Summary - Written Bytes: [{}], Written Rows: [{}] - (QueryId: [{}])", summary.getWrittenBytes(), summary.getWrittenRows(), queryId.getQueryId());
                 }
             }
         }

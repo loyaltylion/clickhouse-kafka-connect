@@ -28,6 +28,7 @@ public class ClickHouseSinkConfig {
     public static final String TIMEOUT_SECONDS = "timeoutSeconds";
     public static final String RETRY_COUNT = "retryCount";
     public static final String EXACTLY_ONCE = "exactlyOnce";
+    public static final String FLATTEN_RECORDS = "flattenRecords";
     public static final String SUPPRESS_TABLE_EXISTENCE_EXCEPTION = "suppressTableExistenceException";
     public static final String CLICKHOUSE_SETTINGS = "clickhouseSettings";
     public static final String TABLE_MAPPING = "topic2TableMap";
@@ -71,6 +72,7 @@ public class ClickHouseSinkConfig {
     private final boolean sslEnabled;
     private final String jdbcConnectionProperties;
     private final boolean exactlyOnce;
+    private final boolean flattenRecords;
     private final int timeout;
     private final int retry;
     private final long tableRefreshInterval;
@@ -173,6 +175,7 @@ public class ClickHouseSinkConfig {
         retry = Integer.parseInt(props.getOrDefault(RETRY_COUNT, retryCountDefault.toString()));
         tableRefreshInterval = Long.parseLong(props.getOrDefault(TABLE_REFRESH_INTERVAL, tableRefreshIntervalDefault.toString())) * MILLI_IN_A_SEC; // multiple in 1000 milli
         exactlyOnce = Boolean.parseBoolean(props.getOrDefault(EXACTLY_ONCE,"false"));
+        flattenRecords = Boolean.parseBoolean(props.getOrDefault(FLATTEN_RECORDS,"false"));
         suppressTableExistenceException = Boolean.parseBoolean(props.getOrDefault("suppressTableExistenceException","false"));
 
         String errorsToleranceString = props.getOrDefault("errors.tolerance", "none").trim();
@@ -246,8 +249,8 @@ public class ClickHouseSinkConfig {
         this.keeperOnCluster = props.getOrDefault(KEEPER_ON_CLUSTER, "");
         this.bypassRowBinary = Boolean.parseBoolean(props.getOrDefault("bypassRowBinary", "false"));
 
-        LOGGER.debug("ClickHouseSinkConfig: hostname: {}, port: {}, database: {}, username: {}, sslEnabled: {}, timeout: {}, retry: {}, exactlyOnce: {}",
-                hostname, port, database, username, sslEnabled, timeout, retry, exactlyOnce);
+        LOGGER.debug("ClickHouseSinkConfig: hostname: {}, port: {}, database: {}, username: {}, sslEnabled: {}, timeout: {}, retry: {}, exactlyOnce: {}, flattenRecords: {}",
+                hostname, port, database, username, sslEnabled, timeout, retry, exactlyOnce, flattenRecords);
         LOGGER.debug("ClickHouseSinkConfig: clickhouseSettings: {}", clickhouseSettings);
         LOGGER.debug("ClickHouseSinkConfig: topicToTableMap: {}", topicToTableMap);
     }
@@ -429,6 +432,16 @@ public class ClickHouseSinkConfig {
                 ConfigDef.Width.LONG,
                 "Insert format.",
                 new InsertFormatValidatorAndRecommender()
+                );
+        configDef.define(FLATTEN_RECORDS,
+                ConfigDef.Type.BOOLEAN,
+                Boolean.FALSE,
+                ConfigDef.Importance.LOW,
+                "Set to true to flatten topic records before pushing them to ClickHouse",
+                group,
+                ++orderInGroup,
+                ConfigDef.Width.LONG,
+                "Flatten records."
                 );
         configDef.define(PROXY_TYPE,
                 ConfigDef.Type.STRING,
